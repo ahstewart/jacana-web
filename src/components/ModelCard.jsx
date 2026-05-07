@@ -62,6 +62,14 @@ export const ModelCard = ({ model, from = 'browse' }) => {
                 Private
               </span>
             )}
+            {model.best_version_status === 'verified' && (
+              <span
+                className="px-1.5 py-0.5 rounded text-xs font-semibold bg-secondary-100 text-secondary-700 cursor-help"
+                title="This model has a verified pipeline and is ready for on-device inference."
+              >
+                Pipeline ✓
+              </span>
+            )}
             {model.task && (
               isTaskSupported(model.task) ? (
                 <span

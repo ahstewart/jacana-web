@@ -31,8 +31,9 @@ export const BrowseModelsPage = () => {
   const [statusFilter, setStatusFilter] = useState(saved.statusFilter ?? []);
   const [appSupportFilter, setAppSupportFilter] = useState(saved.appSupportFilter ?? []);
   const [sortBy, setSortBy] = useState(saved.sortBy ?? 'newest');
+  const [lastSyncedFilter, setLastSyncedFilter] = useState(saved.lastSyncedFilter ?? '');
   const [currentPage, setCurrentPage] = useState(saved.currentPage ?? 1);
-  const itemsPerPage = 12;
+  const itemsPerPage = 50;
 
   // Fetch all models
   useEffect(() => {
@@ -45,9 +46,9 @@ export const BrowseModelsPage = () => {
   // Persist filter state for the session
   useEffect(() => {
     sessionStorage.setItem(FILTER_SESSION_KEY, JSON.stringify({
-      searchQuery, categoryFilter, taskFilter, hasVersionsOnly, statusFilter, appSupportFilter, sortBy, currentPage,
+      searchQuery, categoryFilter, taskFilter, hasVersionsOnly, statusFilter, appSupportFilter, sortBy, lastSyncedFilter, currentPage,
     }));
-  }, [searchQuery, categoryFilter, taskFilter, hasVersionsOnly, sortBy, currentPage]);
+  }, [searchQuery, categoryFilter, taskFilter, hasVersionsOnly, sortBy, lastSyncedFilter, currentPage]);
 
   // Filter and sort logic
   const filteredModels = useMemo(() => {
@@ -79,6 +80,13 @@ export const BrowseModelsPage = () => {
       result = result.filter(m => statusFilter.includes(m.best_version_status ?? 'none'));
     }
 
+    // Last synced filter
+    if (lastSyncedFilter) {
+      const days = parseInt(lastSyncedFilter, 10);
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      result = result.filter(m => m.last_synced_at && new Date(m.last_synced_at) >= cutoff);
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -107,12 +115,20 @@ export const BrowseModelsPage = () => {
           return pa - pb;
         });
         break;
+      case 'last-synced':
+        result.sort((a, b) => {
+          if (!a.last_synced_at && !b.last_synced_at) return 0;
+          if (!a.last_synced_at) return 1;
+          if (!b.last_synced_at) return -1;
+          return new Date(b.last_synced_at) - new Date(a.last_synced_at);
+        });
+        break;
       default:
         break;
     }
 
     return result;
-  }, [models, searchQuery, categoryFilter, taskFilter, hasVersionsOnly, statusFilter, appSupportFilter, sortBy]);
+  }, [models, searchQuery, categoryFilter, taskFilter, hasVersionsOnly, statusFilter, appSupportFilter, sortBy, lastSyncedFilter]);
 
   // Get unique categories and tasks, sorted by model count descending
   const categories = [...new Set(models.map(m => m.category))]
@@ -230,6 +246,16 @@ export const BrowseModelsPage = () => {
       ],
     },
     {
+      id: 'lastSynced',
+      label: 'Last Synced',
+      activeValue: lastSyncedFilter,
+      options: [
+        { label: 'Past 7 days',  value: '7'  },
+        { label: 'Past 30 days', value: '30' },
+        { label: 'Past 90 days', value: '90' },
+      ],
+    },
+    {
       id: 'sort',
       label: 'Sort By',
       activeValue: sortBy,
@@ -238,6 +264,7 @@ export const BrowseModelsPage = () => {
         { label: 'Most Downloaded',  value: 'popular'        },
         { label: 'Highest Rated',    value: 'highest-rated'  },
         { label: 'Pipeline Status',  value: 'version-status' },
+        { label: 'Last Synced',      value: 'last-synced'    },
       ],
     },
   ];
@@ -251,10 +278,12 @@ export const BrowseModelsPage = () => {
       setAppSupportFilter(value ?? []);
     } else if (filterId === 'status') {
       setStatusFilter(value);
+    } else if (filterId === 'lastSynced') {
+      setLastSyncedFilter(value ?? '');
     } else if (filterId === 'sort') {
       setSortBy(value);
     }
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   };
 
   return (
@@ -289,7 +318,7 @@ export const BrowseModelsPage = () => {
             />
             Has versions
           </label>
-          {(searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0 || sortBy !== 'newest') && (
+          {(searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0 || lastSyncedFilter || sortBy !== 'newest') && (
             <Button
               variant="tertiary"
               size="sm"
@@ -300,6 +329,7 @@ export const BrowseModelsPage = () => {
                 setHasVersionsOnly(false);
                 setAppSupportFilter([]);
                 setStatusFilter([]);
+                setLastSyncedFilter('');
                 setSortBy('newest');
               }}
             >
@@ -335,9 +365,9 @@ export const BrowseModelsPage = () => {
         </>
       ) : (
         <EmptyState
-          title={searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0 ? "No models found" : "No models available"}
+          title={searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0 || lastSyncedFilter ? "No models found" : "No models available"}
           description={
-            searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0
+            searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0 || lastSyncedFilter
               ? "Try adjusting your search or filters"
               : "Check back later for new models"
           }

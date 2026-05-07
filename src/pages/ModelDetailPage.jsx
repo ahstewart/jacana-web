@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ApiService } from '../api/client';
 import { useAuth } from '../lib/authContext';
@@ -24,6 +24,7 @@ import {
   CodeBracketIcon,
 } from '@heroicons/react/24/outline';
 import { isTaskSupported } from '../lib/supportedTasks';
+import MarkdownContent from '../components/MarkdownContent';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
 
 const STATUS_BADGE = {
@@ -68,11 +69,27 @@ export const ModelDetailPage = () => {
   const [editPipelineVersion, setEditPipelineVersion] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // Description expand/collapse
+  const [descExpanded, setDescExpanded] = useState(false);
+
+  // Left-nav active section tracking
+  const [activeSection, setActiveSection] = useState('model-metadata');
+
   // Add version wizard
   const [showAddVersionWizard, setShowAddVersionWizard]           = useState(false);
   const [pendingVersionDetails, setPendingVersionDetails]         = useState(null);
   const [showNewVersionPipelineEditor, setShowNewVersionPipelineEditor] = useState(false);
   const [addVersionError, setAddVersionError] = useState(null);
+
+  // Derive best pipeline status from live versions state so it updates reactively.
+  // Must be declared before any early returns to satisfy the Rules of Hooks.
+  const derivedBestStatus = useMemo(() => {
+    const priority = { verified: 0, pending: 1, missing: 2 };
+    if (!versions.length) return null;
+    return versions.reduce((best, v) => {
+      return (priority[v.status] ?? 99) < (priority[best] ?? 99) ? v.status : best;
+    }, versions[0].status);
+  }, [versions]);
 
   // ── Data fetch ────────────────────────────────────────────────────────────
 
@@ -96,6 +113,17 @@ export const ModelDetailPage = () => {
     };
     fetchData();
   }, [id]);
+
+  useEffect(() => {
+    if (loading) return;
+    const handleScroll = () => {
+      const versionsEl = document.getElementById('versions');
+      if (!versionsEl) return;
+      setActiveSection(versionsEl.getBoundingClientRect().top <= 150 ? 'versions' : 'model-metadata');
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading]);
 
   // ── Per-row handlers ──────────────────────────────────────────────────────
 
@@ -239,11 +267,44 @@ export const ModelDetailPage = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
+  const NAV_ITEMS = [
+    { id: 'model-metadata', label: 'Model Metadata' },
+    { id: 'versions',       label: 'Versions'        },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto">
+      <div className="flex gap-8 items-start">
+
+        {/* Left sticky nav */}
+        <aside className="hidden lg:block w-44 flex-shrink-0">
+          <div className="sticky top-24">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">
+              On this page
+            </p>
+            <nav className="space-y-0.5">
+              {NAV_ITEMS.map(({ id, label }) => (
+                <button
+                  key={id}
+                  onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeSection === id
+                      ? 'bg-primary-50 text-primary-700'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <div className="flex-1 min-w-0 space-y-8">
 
       {/* Header */}
-      <div>
+      <div id="model-metadata" className="scroll-mt-24">
         <Button variant="outline" size="sm" onClick={() => navigate(backPath)} className="mb-6 self-start">
           <ArrowLeftIcon className="h-4 w-4" />
           {backLabel}
@@ -278,10 +339,13 @@ export const ModelDetailPage = () => {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-card p-6 lg:p-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Model Info */}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-start gap-3 mb-4 flex-wrap">
               {parseFloat(rating) >= 4.0 && <Badge variant="warning">Popular</Badge>}
               {model.hf_model_id && <Badge variant="slate">HF Synced</Badge>}
+              {derivedBestStatus === 'verified' && <Badge variant="secondary">Pipeline Verified</Badge>}
+              {derivedBestStatus === 'pending' && <Badge variant="accent">Pipeline Pending</Badge>}
+              {!loading && versions.length > 0 && derivedBestStatus === 'missing' && <Badge variant="danger">No Pipeline</Badge>}
               {model.is_public === false ? (
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                   <LockClosedIcon className="h-3.5 w-3.5" />
@@ -296,9 +360,31 @@ export const ModelDetailPage = () => {
             </div>
 
             <h1 className="text-4xl font-bold text-slate-900 mb-4">{model.name}</h1>
-            <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-              {model.description || 'No description provided.'}
-            </p>
+            {(() => {
+              const descText = model.hf_description || model.description;
+              if (!descText) return <p className="text-slate-400 mb-6 italic">No description provided.</p>;
+              const isLong = descText.length > 400;
+              return (
+                <div className="mb-6">
+                  <div className="relative">
+                    <div className={`overflow-hidden transition-all duration-300 ${!descExpanded && isLong ? 'max-h-40' : ''}`}>
+                      <MarkdownContent>{descText}</MarkdownContent>
+                    </div>
+                    {!descExpanded && isLong && (
+                      <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                    )}
+                  </div>
+                  {isLong && (
+                    <button
+                      onClick={() => setDescExpanded(v => !v)}
+                      className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                    >
+                      {descExpanded ? 'Show less ↑' : 'Show more ↓'}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
 
             {model.hf_model_id && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-center gap-3">
@@ -356,6 +442,14 @@ export const ModelDetailPage = () => {
                     <p className="font-medium text-slate-900 break-all">{model.hf_model_id}</p>
                   </div>
                 )}
+                {model.last_synced_at && (
+                  <div>
+                    <p className="text-slate-600">Last Synced</p>
+                    <p className="font-medium text-slate-900">
+                      {new Date(model.last_synced_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    </p>
+                  </div>
+                )}
                 <div>
                 </div>
                 {model.task && (
@@ -391,7 +485,7 @@ export const ModelDetailPage = () => {
       <hr className="border-slate-200 my-2" />
 
       {/* Versions Section */}
-      <div className="bg-primary-50 rounded-2xl border border-primary-100 p-6 space-y-4">
+      <div id="versions" className="scroll-mt-24 bg-green-50 rounded-2xl border border-green-100 p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Versions</h2>
@@ -643,6 +737,11 @@ export const ModelDetailPage = () => {
         )}
       </div>
 
+        </div>{/* end main content */}
+      </div>{/* end flex row */}
+
+      {/* Modals — rendered outside the layout grid so they overlay full screen */}
+
       {/* View Pipeline Modal */}
       {viewPipelineVersion && (
         <div
@@ -653,7 +752,6 @@ export const ModelDetailPage = () => {
             <div className="flex items-center justify-between px-8 py-5 border-b border-slate-200">
               <h2 className="text-lg font-bold text-slate-900">Pipeline Configuration</h2>
               <div className="flex items-center gap-3">
-                {/* Visual / JSON toggle */}
                 <div className="flex border border-slate-200 rounded-lg overflow-hidden text-sm font-medium">
                   {['visual', 'json'].map(tab => (
                     <button
