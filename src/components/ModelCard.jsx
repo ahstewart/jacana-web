@@ -112,7 +112,7 @@ export const ModelCard = ({ model, from = 'browse' }) => {
           </div>
           <div className="flex items-center gap-1">
             <RectangleStackIcon className="h-3.5 w-3.5" />
-            <span>{model.version_count ?? 0} {model.version_count === 1 ? 'version' : 'versions'}</span>
+            <span>{model.version_count ?? 0} {model.version_count === 1 ? 'pipeline' : 'pipelines'}</span>
           </div>
           {formatFileSize(model.file_size_bytes) && (
             <span className="text-slate-500">

@@ -113,7 +113,7 @@ export const GetStartedPage = () => {
 
           <Step number={2} icon={ArrowDownTrayIcon} iconBg="bg-green-100 text-green-600" title="Download a model">
             <p className="text-slate-600 text-sm leading-relaxed mb-3">
-              Tap a model to open its detail page. Pick a version and hit <strong>Download</strong>. The model file is saved to your device — it only needs to download once.
+              Tap a model to open its detail page. Pick a pipeline and hit <strong>Download</strong>. The model file is saved to your device — it only needs to download once.
             </p>
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
               <strong>Tip:</strong> Model files range from a few MB to a few hundred MB. Download over Wi-Fi if you're on a limited data plan.

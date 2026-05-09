@@ -6,7 +6,7 @@ import Button from '../components/Button';
 import Badge from '../components/Badge';
 import PipelineConfigViewer from '../components/PipelineConfigViewer';
 import { PipelineConfigWizard } from '../components/PipelineConfigWizard';
-import { AddVersionWizard } from '../components/AddVersionWizard';
+import { AddPipelineWizard } from '../components/AddVersionWizard';
 import {
   StarIcon as StarOutlineIcon,
   ExclamationTriangleIcon,
@@ -36,7 +36,7 @@ const STATUS_BADGE = {
 const STATUS_TOOLTIP = {
   verified: 'Verified — the pipeline passed TFLite validation and is ready for on-device inference.',
   pending:  'Pending — a pipeline exists but has not yet been verified against the TFLite model.',
-  missing:  'Missing — this version has no pipeline, or pipeline generation was rejected for this model.',
+  missing:  'Missing — no pipeline configuration has been generated for this model.',
 };
 
 export const ModelDetailPage = () => {
@@ -96,12 +96,11 @@ export const ModelDetailPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [models, fetchedVersions] = await Promise.all([
-          ApiService.getModels(),
+        const [fetchedModel, fetchedVersions] = await Promise.all([
+          ApiService.getModel(id),
           ApiService.getModelVersions(id),
         ]);
-        const found = models.find(m => m.id.toString() === id);
-        setModel(found || null);
+        setModel(fetchedModel || null);
         setVersions(Array.isArray(fetchedVersions) ? fetchedVersions : []);
       } catch (err) {
         console.error('Failed to load model:', err);
@@ -119,7 +118,7 @@ export const ModelDetailPage = () => {
     const handleScroll = () => {
       const versionsEl = document.getElementById('versions');
       if (!versionsEl) return;
-      setActiveSection(versionsEl.getBoundingClientRect().top <= 150 ? 'versions' : 'model-metadata');
+      setActiveSection(versionsEl.getBoundingClientRect().top <= window.innerHeight / 2 ? 'versions' : 'model-metadata');
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -269,12 +268,12 @@ export const ModelDetailPage = () => {
 
   const NAV_ITEMS = [
     { id: 'model-metadata', label: 'Model Metadata' },
-    { id: 'versions',       label: 'Versions'        },
+    { id: 'versions',       label: 'Pipelines'       },
   ];
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="flex gap-8 items-start">
+    <>
+    <div className="flex gap-8">
 
         {/* Left sticky nav */}
         <aside className="hidden lg:block w-44 flex-shrink-0">
@@ -311,11 +310,11 @@ export const ModelDetailPage = () => {
         </Button>
 
         {isTaskSupported(model.task) ? (
-          <div className="flex items-center gap-3 px-4 py-3 mb-4 bg-primary-50 border border-primary-200 rounded-xl">
-            <DevicePhoneMobileIcon className="h-5 w-5 text-primary-600 flex-shrink-0" />
+          <div className="flex items-center gap-3 px-4 py-3 mb-4 bg-green-50 border border-green-200 rounded-xl">
+            <DevicePhoneMobileIcon className="h-5 w-5 text-green-600 flex-shrink-0" />
             <p className="text-sm text-slate-700">
               Want to try this model?{' '}
-              <strong className="text-primary-700">Download the Jacana app</strong> — browse, download, and run AI models 100% on-device.
+              <strong className="text-green-700">Download the Jacana app</strong> — browse, download, and run AI models 100% on-device.
             </p>
           </div>
         ) : model.task ? (
@@ -485,18 +484,18 @@ export const ModelDetailPage = () => {
       <hr className="border-slate-200 my-2" />
 
       {/* Versions Section */}
-      <div id="versions" className="scroll-mt-24 bg-green-50 rounded-2xl border border-green-100 p-6 space-y-4">
+      <div id="versions" className="scroll-mt-24 bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Versions</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Pipelines</h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              {versions.length} version{versions.length !== 1 ? 's' : ''}
+              {versions.length} pipeline{versions.length !== 1 ? 's' : ''}
             </p>
           </div>
           {user && (
             <Button variant="primary" size="sm" onClick={() => setShowAddVersionWizard(true)}>
               <PlusIcon className="h-4 w-4" />
-              Add New Version
+              Add New Pipeline
             </Button>
           )}
         </div>
@@ -513,11 +512,11 @@ export const ModelDetailPage = () => {
 
         {versions.length === 0 ? (
           <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-xl">
-            <p className="text-slate-500 mb-4">No versions yet.</p>
+            <p className="text-slate-500 mb-4">No pipelines yet.</p>
             {user && (
               <Button variant="outline" size="sm" onClick={() => setShowAddVersionWizard(true)}>
                 <PlusIcon className="h-4 w-4" />
-                Add First Version
+                Add First Pipeline
               </Button>
             )}
           </div>
@@ -529,12 +528,13 @@ export const ModelDetailPage = () => {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Version</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Released</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Pipeline</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">Pipeline Config</th>
                   {user && <th className="px-4 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {versions.map((version) => {
+                  const isSystemGenerated = version.is_system_generated;
                   const isSupported     = version.status === 'verified';
                   const isGenerating    = generatingId === version.id;
                   const isDeleting      = deletingId === version.id;
@@ -550,7 +550,7 @@ export const ModelDetailPage = () => {
                             <div className="flex items-center gap-3 flex-wrap">
                               <ExclamationTriangleIcon className="h-4 w-4 text-red-600 flex-shrink-0" />
                               <span className="text-sm text-red-800 flex-1">
-                                Permanently delete version <strong className="font-mono">v{version.version_name}</strong>? This cannot be undone.
+                                Permanently delete pipeline <strong className="font-mono">{version.version_name}</strong>? This cannot be undone.
                                 {deleteError && <span className="ml-2 text-red-600">{deleteError}</span>}
                               </span>
                               <Button
@@ -578,8 +578,13 @@ export const ModelDetailPage = () => {
                           {/* Version name + downloads */}
                           <td className="px-4 py-3">
                             <span className="font-mono font-medium text-slate-900">
-                              v{version.version_name}
+                              {version.version_name}
                             </span>
+                            {isSystemGenerated && (
+                              <span className="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">
+                                Auto-generated
+                              </span>
+                            )}
                             {version.download_count > 0 && (
                               <span className="ml-2 text-xs text-slate-400">
                                 {version.download_count} ⬇
@@ -637,7 +642,7 @@ export const ModelDetailPage = () => {
                                       )}
                                     </div>
                                   )}
-                                  {isFailure && (
+                                  {isFailure && !isGenerating && (
                                     <button
                                       onClick={() => setShowReasonVersionId(isShowingReason ? null : version.id)}
                                       title={isShowingReason ? 'Hide reason' : 'Click to see failure reason'}
@@ -651,7 +656,7 @@ export const ModelDetailPage = () => {
                                       </Badge>
                                     </button>
                                   )}
-                                  {!version.pipeline_spec && !isFailure && (
+                                  {!version.pipeline_spec && !isFailure && !isGenerating && (
                                     <span className="text-slate-300">—</span>
                                   )}
                                 </div>
@@ -662,11 +667,14 @@ export const ModelDetailPage = () => {
                           {/* Action buttons */}
                           {user && (
                             <td className="px-4 py-3">
+                              {isSystemGenerated ? (
+                                <span className="text-xs text-slate-400 italic flex justify-end">Read only</span>
+                              ) : (
                               <div className="flex items-center justify-end gap-0.5">
                                 <button
                                   onClick={() => handleRegenerate(version)}
                                   disabled={isSupported || isGenerating || generatingId !== null}
-                                  title={isSupported ? 'Cannot regenerate a verified version' : 'Regenerate pipeline with AI'}
+                                  title={isSupported ? 'Cannot regenerate a verified pipeline' : 'Regenerate pipeline config with AI'}
                                   className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                 >
                                   <ArrowPathIcon className="h-4 w-4" />
@@ -674,7 +682,7 @@ export const ModelDetailPage = () => {
                                 <button
                                   onClick={() => setEditPipelineVersion(version)}
                                   disabled={isSupported || isGenerating}
-                                  title={isSupported ? 'Cannot edit a verified version' : 'Edit pipeline configuration'}
+                                  title={isSupported ? 'Cannot edit a verified pipeline' : 'Edit pipeline configuration'}
                                   className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                 >
                                   <PencilSquareIcon className="h-4 w-4" />
@@ -682,12 +690,13 @@ export const ModelDetailPage = () => {
                                 <button
                                   onClick={() => { setDeleteConfirmId(version.id); setDeleteError(null); }}
                                   disabled={isDeleting}
-                                  title="Delete this version"
+                                  title="Delete this pipeline"
                                   className="p-1.5 rounded-lg hover:bg-red-50 text-slate-500 hover:text-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                                 >
                                   <TrashIcon className="h-4 w-4" />
                                 </button>
                               </div>
+                              )}
                             </td>
                           )}
                         </tr>
@@ -738,7 +747,7 @@ export const ModelDetailPage = () => {
       </div>
 
         </div>{/* end main content */}
-      </div>{/* end flex row */}
+    </div>{/* end flex row */}
 
       {/* Modals — rendered outside the layout grid so they overlay full screen */}
 
@@ -799,7 +808,7 @@ export const ModelDetailPage = () => {
 
       {/* Add Version Wizard */}
       {showAddVersionWizard && (
-        <AddVersionWizard
+        <AddPipelineWizard
           hfModelId={model.hf_model_id}
           existingTfliteUrl={versions[0]?.assets?.tflite}
           onCreateManual={handleAddVersionManual}
@@ -819,6 +828,6 @@ export const ModelDetailPage = () => {
           }}
         />
       )}
-    </div>
+    </>
   );
 };

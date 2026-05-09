@@ -117,7 +117,7 @@ export const DocsPage = () => (
       title="How the platform works"
     >
       <div className="space-y-5">
-        <Step number={1} title="Browse the catalogue" description="Find models by task, category, or search. Each listing shows downloads, rating, and which version is ready to use." />
+        <Step number={1} title="Browse the catalogue" description="Find models by task, category, or search. Each listing shows downloads, rating, and which pipeline is ready to use." />
         <Step number={2} title="Download to your phone" description="Open the Jacana mobile app, find the model you want, and tap Download. It's saved locally — no account needed to run models." />
         <Step number={3} title="Run inference" description="Pick a model from My AI, feed it an image or some text, and see results in milliseconds — all on-device." />
         <Step number={4} title="That's it" description="No API key. No credits. No rate limits. Just fast, private AI on your hardware." />
@@ -135,7 +135,7 @@ export const DocsPage = () => (
       </p>
       <div className="space-y-4">
         <Step number={1} title="Create a model listing" description="Give it a name, description, category, and optionally link it to a Hugging Face repo." />
-        <Step number={2} title="Add a version" description="Attach your .tflite file. New versions can be added anytime as you improve the model." />
+        <Step number={2} title="Add a pipeline" description="Attach your .tflite file. New pipelines can be added anytime as you improve the model." />
         <Step number={3} title="Generate a pipeline" description="Jacana's AI assistant (powered by Gemini) reads your model and generates a pipeline config automatically — telling the app how to pre-process inputs and interpret outputs." />
         <Step number={4} title="Publish" description="Set visibility to Public and other users can find, download, and run your model." />
       </div>
@@ -193,7 +193,7 @@ export const DocsPage = () => (
         />
         <FaqItem
           q="How accurate are the models?"
-          a="Accuracy varies by model. Check the version status — 'Verified' means the pipeline has been validated against the TFLite model. Ratings from other users are also a good signal."
+          a="Accuracy varies by model. Check the pipeline status — 'Verified' means the pipeline config has been validated against the TFLite model. Ratings from other users are also a good signal."
         />
         <FaqItem
           q="Can I upload a model trained in PyTorch?"
@@ -205,7 +205,7 @@ export const DocsPage = () => (
         />
         <FaqItem
           q="Why did pipeline generation fail for my model?"
-          a="Some models use operations not yet supported by the inference engine (e.g. custom ops, certain LSTM variants). The failure reason is shown on the version row. You can try writing the pipeline manually, or open a GitHub issue."
+          a="Some models use operations not yet supported by the inference engine (e.g. custom ops, certain LSTM variants). The failure reason is shown on the pipeline row. You can try writing the pipeline config manually, or open a GitHub issue."
         />
       </div>
     </div>

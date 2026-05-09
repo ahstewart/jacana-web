@@ -316,7 +316,7 @@ export const BrowseModelsPage = () => {
               onChange={e => { setHasVersionsOnly(e.target.checked); setCurrentPage(1); }}
               className="h-4 w-4 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
             />
-            Has versions
+            Has pipelines
           </label>
           {(searchQuery || categoryFilter.length > 0 || taskFilter.length > 0 || hasVersionsOnly || appSupportFilter.length > 0 || statusFilter.length > 0 || lastSyncedFilter || sortBy !== 'newest') && (
             <Button

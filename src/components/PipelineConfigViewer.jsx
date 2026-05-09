@@ -190,7 +190,7 @@ const PipelineConfigViewer = ({ pipelineSpec, onEdit, isEditable = false, active
         <div>
           <p className="font-semibold text-yellow-900">No Pipeline Configuration</p>
           <p className="text-sm text-yellow-800 mt-0.5">
-            This version doesn't have a pipeline configuration yet.
+            This pipeline doesn't have a configuration file yet.
             {isEditable && ' Create one to define how this model should be executed.'}
           </p>
           {isEditable && (

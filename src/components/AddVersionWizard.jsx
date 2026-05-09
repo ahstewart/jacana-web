@@ -19,7 +19,7 @@ const fetchHFTfliteFiles = async (hfModelId) => {
     }));
 };
 
-export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual, onCreateAndGenerate, onCancel }) => {
+export const AddPipelineWizard = ({ hfModelId, existingTfliteUrl, onCreateManual, onCreateAndGenerate, onCancel }) => {
   const [step, setStep] = useState('details');
   const [details, setDetails] = useState({
     version_name: '',
@@ -75,7 +75,7 @@ export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual,
     try {
       await onCreateAndGenerate(withSha());
     } catch (err) {
-      setGenerateError(err.message || 'Failed to create version.');
+      setGenerateError(err.message || 'Failed to create pipeline.');
       setGenerating(false);
     }
   };
@@ -127,9 +127,9 @@ export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual,
         {/* Header */}
         <div className="flex items-start justify-between px-6 py-5 border-b border-slate-200">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Add New Version</h2>
+            <h2 className="text-xl font-bold text-slate-900">Add New Pipeline</h2>
             <p className="text-sm text-slate-500 mt-0.5">
-              {step === 'details' ? 'Step 1 of 2 — Version Details' : 'Step 2 of 2 — Pipeline'}
+              {step === 'details' ? 'Step 1 of 2 — Pipeline Details' : 'Step 2 of 2 — Pipeline Config'}
             </p>
           </div>
           <button onClick={onCancel} disabled={generating} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
@@ -142,7 +142,7 @@ export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual,
           <div className="p-6 space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Version Name <span className="text-red-500">*</span>
+                Pipeline Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -166,7 +166,7 @@ export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual,
                 value={details.changelog}
                 onChange={e => setDetails({ ...details, changelog: e.target.value })}
                 rows={3}
-                placeholder="Describe what changed in this version…"
+                placeholder="Describe what changed in this pipeline…"
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               />
             </div>
@@ -211,8 +211,8 @@ export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual,
                     <p className="font-semibold text-slate-900">Generate with AI</p>
                     <p className="text-sm text-slate-500 mt-0.5">
                       {generating
-                        ? 'Creating version and generating pipeline…'
-                        : 'Let Gemini generate the pipeline automatically from the model metadata.'}
+                        ? 'Creating pipeline…'
+                        : 'Let Gemini generate the pipeline config automatically from the model metadata.'}
                     </p>
                   </div>
                 </div>
@@ -248,4 +248,4 @@ export const AddVersionWizard = ({ hfModelId, existingTfliteUrl, onCreateManual,
   );
 };
 
-export default AddVersionWizard;
+export default AddPipelineWizard;

@@ -1,5 +1,2 @@
-- logged-in users should can only modify versions that they own
-- by default, all synced models contain a generated version that no user can edit. Logged-in users can add their own versions, but noone can edit or refresh the generated version
-- improve docs
 - by default set filters to supported and verified pipelines
 - fix inference errors and identify my foundational models

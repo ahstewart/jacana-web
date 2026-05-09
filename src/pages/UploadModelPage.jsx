@@ -46,7 +46,7 @@ const formatBytes = (bytes) => {
   return `${(bytes / 1024).toFixed(1)} KB`;
 };
 
-const STEP_LABELS = ['Model Info', 'Version', 'Model File', 'Pipeline'];
+const STEP_LABELS = ['Model Info', 'Pipeline', 'Model File', 'Pipeline Config'];
 
 const StepProgress = ({ current }) => (
   <div className="mb-8">
@@ -215,7 +215,7 @@ export const UploadModelPage = () => {
       { id: 'upload',  label: fileMode === 'upload'
           ? `Uploading ${uploadedFile?.name ?? 'model file'}`
           : 'Linking model file from Hugging Face',              status: 'pending' },
-      { id: 'version', label: 'Creating version',                status: 'pending' },
+      { id: 'version', label: 'Creating pipeline',               status: 'pending' },
       ...(pipelineChoice === 'generate'
         ? [{ id: 'pipeline', label: 'Generating AI pipeline…',         status: 'pending' }]
         : pipelineChoice === 'manual' && pipelineConfig
@@ -501,7 +501,7 @@ export const UploadModelPage = () => {
                   <GlobeAltIcon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${meta.is_public ? 'text-primary-600' : 'text-slate-400'}`} />
                   <div>
                     <p className={`font-semibold text-sm ${meta.is_public ? 'text-primary-800' : 'text-slate-700'}`}>Public</p>
-                    <p className="text-xs text-slate-500 mt-0.5">Anyone can view, download, and contribute versions</p>
+                    <p className="text-xs text-slate-500 mt-0.5">Anyone can view, download, and contribute pipelines</p>
                   </div>
                 </button>
                 <button
@@ -520,17 +520,17 @@ export const UploadModelPage = () => {
           </div>
         )}
 
-        {/* ── Step 2: Version Details ────────────────────────────────────── */}
+        {/* ── Step 2: Pipeline Details ─────────────────────────────────── */}
         {currentStep === 2 && (
           <div className="space-y-5">
-            <h2 className="text-xl font-bold text-slate-900">Version Details</h2>
+            <h2 className="text-xl font-bold text-slate-900">Pipeline Details</h2>
             <p className="text-sm text-slate-500">
-              This is the first version of your model. You can add more versions later from the model detail page.
+              This is the first pipeline for your model. You can add more pipelines later from the model detail page.
             </p>
 
             <div>
               <label className="block text-sm font-medium text-slate-900 mb-1.5">
-                Version Name <span className="text-red-500">*</span>
+                Pipeline Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
