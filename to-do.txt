@@ -1,11 +1,5 @@
-- there is a bug where upgrading a version's pipeline from failed to verified doesn't result in the model card badge for pipeline status being updated, it still says "Unsupported"
-- we should have a column for who created a version, if it was created by Jacana we should say so
-- need to add timestamps for when a model was last synced from huggingface to the model's details page, and allow filtering by that value on the browse models page
-- the red background of the version table is not great, it makes it look like an error. we should try a light shade of green
-- move the github widget in the site header to the right, so it centered between the Learn button and the user's badge
-- we should add the model description from the huggingface model card to the model details web page in Jacana. The description should be displayed in place of the text that currently says "LiteRT model synced from"..
 - logged-in users should can only modify versions that they own
-- we should display 50 model cards per page on the Browse Models page
+- by default, all synced models contain a generated version that no user can edit. Logged-in users can add their own versions, but noone can edit or refresh the generated version
 - improve docs
 - by default set filters to supported and verified pipelines
 - fix inference errors and identify my foundational models
